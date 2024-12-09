@@ -9,16 +9,17 @@ const config = {
   middleX: window.innerWidth / 2,
   middleY: window.innerHeight / 2,
   velocity: 3,
-  snakeLength: 10,
+  snakeLength: 3,
+  appleCalorie: 0.5,
+  tendonsDistance: 10,
   colors: {
-    snake1: "#118A17",
-    snake2: "#A2D31C",
+    snake: "#118A17",
     apple: "#E63F0C",
   },
 };
 
 class Point {
-  constructor(x, y, color) {
+  constructor(x, y) {
     this.x = x || config.middleX;
     this.y = y || config.middleY;
   }
@@ -26,10 +27,6 @@ class Point {
   set(x, y) {
     this.x = x;
     this.y = y;
-  }
-
-  changeColor(color) {
-    this.color = color;
   }
 }
 
@@ -40,6 +37,7 @@ const mouseCoords = new Point();
 class Snake {
   constructor() {
     this.tail = [];
+    this.radius = 10;
     for (let i = 0; i < config.snakeLength; i++) {
       this.tail[i] = new Point();
     }
@@ -56,16 +54,26 @@ class Snake {
       let dx = (deltaX / vectorLength) * config.velocity || 0;
       let dy = (deltaY / vectorLength) * config.velocity || 0;
 
-      if (vectorLength > 10) {
+      if (vectorLength > config.tendonsDistance) {
         point.set(point.x + dx, point.y + dy);
       }
 
-      ctx.beginPath();
-      ctx.fillStyle = index % 2 === 0 ? config.colors.snake1 : config.colors.snake2;
-      ctx.arc(point.x, point.y, 10, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.closePath();
+      if (index === 0) {
+        ctx.beginPath();
+        ctx.moveTo(point.x, point.y);
+      } else {
+        ctx.quadraticCurveTo(prev.x, prev.y, (point.x + prev.x) / 2, (point.y + prev.y) / 2);
+      }
+      ctx.lineCap = "round";
+      ctx.strokeStyle = config.colors.snake;
+      ctx.lineWidth = snake.radius;
+      ctx.stroke();
     });
+  }
+
+  grow() {
+    this.tail.push(new Point(snake.tail[snake.tail.length - 1].x, snake.tail[snake.tail.length - 1].y));
+    this.radius += config.appleCalorie;
   }
 }
 
@@ -91,7 +99,7 @@ class Apple {
     if (Math.abs(this.x - snake.tail[0].x) < 20 && Math.abs(this.y - snake.tail[0].y) < 20) {
       this.x = Math.floor(Math.random() * config.width);
       this.y = Math.floor(Math.random() * config.height);
-      snake.tail.push(new Point(snake.tail[snake.tail.length - 1].x, snake.tail[snake.tail.length - 1].y));
+      snake.grow();
     }
   }
 }
