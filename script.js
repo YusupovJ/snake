@@ -6,22 +6,30 @@ const ctx = canvas.getContext("2d");
 const config = {
   width: window.innerWidth,
   height: window.innerHeight,
+  middleX: window.innerWidth / 2,
+  middleY: window.innerHeight / 2,
   velocity: 3,
-  snakeLength: 50,
+  snakeLength: 10,
   colors: {
-    green: "#118a17",
+    snake1: "#118A17",
+    snake2: "#A2D31C",
+    apple: "#E63F0C",
   },
 };
 
 class Point {
-  constructor(x, y) {
-    this.x = x || config.width / 2;
-    this.y = y || config.height / 2;
+  constructor(x, y, color) {
+    this.x = x || config.middleX;
+    this.y = y || config.middleY;
   }
 
   set(x, y) {
     this.x = x;
     this.y = y;
+  }
+
+  changeColor(color) {
+    this.color = color;
   }
 }
 
@@ -29,49 +37,84 @@ const mouseCoords = new Point();
 
 /* Drawing snake */
 
-const snake = [];
-for (let i = 0; i < config.snakeLength; i++) {
-  snake[i] = new Point();
+class Snake {
+  constructor() {
+    this.tail = [];
+    for (let i = 0; i < config.snakeLength; i++) {
+      this.tail[i] = new Point();
+    }
+  }
+
+  draw() {
+    this.tail.forEach((point, index) => {
+      const prev = index === 0 ? mouseCoords : this.tail[index - 1];
+
+      let deltaX = prev.x - point.x;
+      let deltaY = prev.y - point.y;
+
+      const vectorLength = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+      let dx = (deltaX / vectorLength) * config.velocity || 0;
+      let dy = (deltaY / vectorLength) * config.velocity || 0;
+
+      if (vectorLength > 10) {
+        point.set(point.x + dx, point.y + dy);
+      }
+
+      ctx.beginPath();
+      ctx.fillStyle = index % 2 === 0 ? config.colors.snake1 : config.colors.snake2;
+      ctx.arc(point.x, point.y, 10, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.closePath();
+    });
+  }
 }
 
-const drawSnake = () => {
-  snake.forEach((point, index) => {
-    const prev = index === 0 ? mouseCoords : snake[index - 1];
+const snake = new Snake();
 
-    let deltaX = prev.x - point.x;
-    let deltaY = prev.y - point.y;
+/* Apple */
 
-    const vectorLength = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-    let dx = (deltaX / vectorLength) * config.velocity || 0;
-    let dy = (deltaY / vectorLength) * config.velocity || 0;
+class Apple {
+  constructor() {
+    this.x = Math.floor(Math.random() * config.width);
+    this.y = Math.floor(Math.random() * config.height);
+  }
 
-    if (vectorLength > 10) {
-      point.set(point.x + dx, point.y + dy);
-    }
-
+  draw() {
     ctx.beginPath();
-    ctx.fillStyle = config.colors.green;
-    ctx.arc(point.x, point.y, 10, 0, 2 * Math.PI);
+    ctx.fillStyle = config.colors.apple;
+    ctx.arc(this.x, this.y, 8, 0, 2 * Math.PI);
     ctx.fill();
     ctx.closePath();
-  });
-};
+  }
+
+  eat() {
+    if (Math.abs(this.x - snake.tail[0].x) < 20 && Math.abs(this.y - snake.tail[0].y) < 20) {
+      this.x = Math.floor(Math.random() * config.width);
+      this.y = Math.floor(Math.random() * config.height);
+      snake.tail.push(new Point(snake.tail[snake.tail.length - 1].x, snake.tail[snake.tail.length - 1].y));
+    }
+  }
+}
+
+const apple = new Apple();
 
 /* Dash */
 
 window.addEventListener("mousedown", () => {
-  config.velocity += 2;
+  config.velocity = 4;
 });
 
 window.addEventListener("mouseup", () => {
-  config.velocity -= 2;
+  config.velocity = 3;
 });
 
 /* Frame update */
 
 function tick(t) {
   ctx.clearRect(0, 0, config.width, config.height);
-  drawSnake();
+  snake.draw();
+  apple.draw();
+  apple.eat();
   window.requestAnimationFrame(tick);
 }
 
