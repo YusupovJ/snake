@@ -9,6 +9,7 @@ const config = {
   middleX: window.innerWidth / 2,
   middleY: window.innerHeight / 2,
   velocity: 3,
+  auto: false,
   snakeLength: 3,
   appleCalorie: 0.5,
   tendonsDistance: 10,
@@ -45,7 +46,7 @@ class Snake {
 
   draw() {
     this.tail.forEach((point, index) => {
-      const prev = index === 0 ? mouseCoords : this.tail[index - 1];
+      const prev = index === 0 ? (config.auto ? apple : mouseCoords) : this.tail[index - 1];
 
       let deltaX = prev.x - point.x;
       let deltaY = prev.y - point.y;
